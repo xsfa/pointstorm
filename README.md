@@ -2,6 +2,10 @@
 
 Real-time embeddings for data on the move
 
+```shell
+pip install pointstorm
+```
+
 ## Kafka Example Quickstart
 
 ### Prerequisites
