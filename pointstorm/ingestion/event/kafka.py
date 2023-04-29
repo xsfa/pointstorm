@@ -1,27 +1,29 @@
+# Ingestion Imports
 from bytewax import Dataflow, cluster_main, spawn_cluster
 from bytewax.inputs import KafkaInputConfig
 from kafka import KafkaConsumer, TopicPartition
 
+# Generic imports
+import json
+import logging
 import warnings
 warnings.filterwarnings(action = 'ignore')
 
+# ML imports
 from transformers import AutoTokenizer, AutoModel
 import torch
 
-import json
-import logging
-
-from config import abstract_logger as kafka_logger
+# Local imports
+from pointstorm.config import abstract_logger as kafka_logger
 
 class KafkaIngestionException(Exception):
     pass
 
-class KafkaSentenceVectorizer():
-    def __init__(self, kafka_topic, kafka_bootstrap_server, kafka_group_id, messages_per_epoch, text_field, huggingface_model_name):
+class KafkaTextEmbeddings():
+    def __init__(self, kafka_topic, kafka_bootstrap_server, kafka_group_id, text_field, huggingface_model_name):
         self.kafka_topic = kafka_topic
         self.kafka_bootstrap_server = kafka_bootstrap_server
         self.kafka_group_id = kafka_group_id
-        self.messages_per_epoch = messages_per_epoch
         self.text_field = text_field
         self.model_name = huggingface_model_name
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
@@ -30,9 +32,6 @@ class KafkaSentenceVectorizer():
 
     def set_topic(self, kafka_topic):
         self.kafka_topic = kafka_topic
-
-    def set_vectorizer(self, vectorizer):
-        self.vectorizer = vectorizer
 
     def get_previous_messages(self):
         previous_messages = []
@@ -68,7 +67,11 @@ class KafkaSentenceVectorizer():
         """
         Vectorize the message using the trained model
         """
-        message = str(json.loads(message[1])[self.text_field]) if self.text_field in json.loads(message[1]) else str(json.loads(message[1]))
+
+        if self.text_field in json.loads(message[1]):
+            message = str(json.loads(message[1])[self.text_field])
+        else:
+            raise KafkaIngestionException("Message does not contain the specified text field: " + self.text_field)
         inputs = self.tokenizer(message, return_tensors="pt", padding=True, truncation=True)
 
         with torch.no_grad():
@@ -78,7 +81,7 @@ class KafkaSentenceVectorizer():
         kafka_logger.info(f"Generated embeddings for message: {message}, {embeddings}")
 
     def run(self):
-        kafka_logger.info("Started KafkaSentenceVectorizer for topic: " + self.kafka_topic)
+        kafka_logger.info("Started KafkaTextEmbeddings for topic: " + self.kafka_topic)
         flow = Dataflow()
 
         flow.map(self.vectorize)
@@ -88,7 +91,7 @@ class KafkaSentenceVectorizer():
             self.kafka_bootstrap_server,
             self.kafka_group_id,
             self.kafka_topic,
-            messages_per_epoch=self.messages_per_epoch
+            messages_per_epoch=1
         )
 
         def print_output(worker_index, worker_count):

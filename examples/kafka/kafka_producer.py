@@ -14,6 +14,10 @@ logging.basicConfig(format='%(asctime)s %(message)s',
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+# Create Kafka Producer
+p = Producer({'bootstrap.servers':'localhost:9092'})
+print('Kafka Producer has been initiated...')
+
 def receipt(err,msg):
     if err is not None:
         print('Error: {}'.format(err))
