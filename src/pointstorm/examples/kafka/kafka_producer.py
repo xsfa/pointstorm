@@ -1,9 +1,9 @@
-from confluent_kafka import Producer
-from faker import Faker
 import json
 import time
 import logging
 import random 
+from confluent_kafka import Producer
+from faker import Faker
 
 fake = Faker()
 logging.basicConfig(format='%(asctime)s %(message)s',

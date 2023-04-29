@@ -1,13 +1,13 @@
-# Ingestion Imports
-from bytewax import Dataflow, cluster_main, spawn_cluster
-from bytewax.inputs import KafkaInputConfig
-from kafka import KafkaConsumer, TopicPartition
-
 # Generic imports
 import json
 import logging
 import warnings
 warnings.filterwarnings(action = 'ignore')
+
+# Ingestion Imports
+from bytewax import Dataflow, cluster_main, spawn_cluster
+from bytewax.inputs import KafkaInputConfig
+from kafka import KafkaConsumer, TopicPartition
 
 # ML imports
 from transformers import AutoTokenizer, AutoModel
