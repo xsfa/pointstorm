@@ -1,8 +1,5 @@
-import sys
-sys.path.append('/Users/tesfa/Developer/github/pointstorm')
-import pointstorm.ingestion.event.kafka as kafka
-import json
 import os
+import pointstorm.ingestion.event.kafka as kafka
 
 if __name__ == "__main__":
     kafka_embeddings = kafka.KafkaTextEmbeddings(
