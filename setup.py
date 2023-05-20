@@ -1,10 +1,15 @@
 from setuptools import setup, find_packages
 
+version = open('VERSION').read().strip()
+license = open('LICENSE').read().strip()
+
 setup(
     name="pointstorm",
-    version="1.1.0",
-    description="Emebedding vectors for real-time streaming data",
-    author="Tesfa Shenkute",
+    version=version,
+    license=license,
+    description="Embedding vectors for data on the move",
+    long_description=open('README.md').read().strip(),
+    author="xsfa",
     author_email="tesfaaog@gmail.com",
     url="https://github.com/xsfa/pointstorm",
     packages=find_packages(),
