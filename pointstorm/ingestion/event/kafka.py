@@ -28,40 +28,40 @@ class KafkaTextEmbeddings():
         self.model_name = huggingface_model_name
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.model = AutoModel.from_pretrained(self.model_name)
-        self.previous_messages = self.get_previous_messages()
+        # self.previous_messages = self.get_previous_messages()
 
     def set_topic(self, kafka_topic):
         self.kafka_topic = kafka_topic
 
-    def get_previous_messages(self):
-        previous_messages = []
+    # def get_previous_messages(self):
+    #     previous_messages = []
 
-        consumer = KafkaConsumer(
-            self.kafka_topic,
-            bootstrap_servers=self.kafka_bootstrap_server,
-            group_id=self.kafka_group_id,
-            auto_offset_reset='earliest',
-            enable_auto_commit=True,
-            value_deserializer=lambda x: x.decode('utf-8')
-        )
+    #     consumer = KafkaConsumer(
+    #         self.kafka_topic,
+    #         bootstrap_servers=self.kafka_bootstrap_server,
+    #         group_id=self.kafka_group_id,
+    #         auto_offset_reset='earliest',
+    #         enable_auto_commit=True,
+    #         value_deserializer=lambda x: x.decode('utf-8')
+    #     )
 
-        partitions = consumer.partitions_for_topic(self.kafka_topic)
-        topic_partitions = [TopicPartition(self.kafka_topic, p) for p in partitions]
-        end_offsets = consumer.end_offsets(topic_partitions)
+    #     partitions = consumer.partitions_for_topic(self.kafka_topic)
+    #     topic_partitions = [TopicPartition(self.kafka_topic, p) for p in partitions]
+    #     end_offsets = consumer.end_offsets(topic_partitions)
 
-        for message in consumer:
+    #     for message in consumer:
 
-            previous_messages.append(json.loads(message.value)[self.text_field]) if self.text_field in json.loads(message.value) else previous_messages.append(json.loads(message.value))
+    #         previous_messages.append(json.loads(message.value)[self.text_field]) if self.text_field in json.loads(message.value) else previous_messages.append(json.loads(message.value))
 
-            topic_partition = TopicPartition(message.topic, message.partition)
-            if message.offset == end_offsets[topic_partition] - 1:
-                topic_partitions.remove(topic_partition)
+    #         topic_partition = TopicPartition(message.topic, message.partition)
+    #         if message.offset == end_offsets[topic_partition] - 1:
+    #             topic_partitions.remove(topic_partition)
 
-                if not topic_partitions:
-                    consumer.close()
-                    break
+    #             if not topic_partitions:
+    #                 consumer.close()
+    #                 break
         
-        return previous_messages
+    #     return previous_messages
 
     def vectorize(self, message):
         """

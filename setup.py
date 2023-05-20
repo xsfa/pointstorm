@@ -8,7 +8,6 @@ setup(
     version=version,
     license=license,
     description="Embedding vectors for data on the move",
-    long_description=open('README.md').read().strip(),
     author="xsfa",
     author_email="tesfaaog@gmail.com",
     url="https://github.com/xsfa/pointstorm",
