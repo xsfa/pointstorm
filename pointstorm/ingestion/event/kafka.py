@@ -2,12 +2,15 @@
 import json
 import logging
 import warnings
+import os
 warnings.filterwarnings(action = 'ignore')
 
 # Ingestion Imports
-from bytewax import Dataflow, cluster_main, spawn_cluster
-from bytewax.inputs import KafkaInputConfig
-from kafka import KafkaConsumer, TopicPartition
+from bytewax.testing import run_main
+from bytewax.dataflow import Dataflow
+from bytewax.connectors.kafka import KafkaInput
+from bytewax.connectors.stdio import StdOutput
+# from kafka import KafkaConsumer, TopicPartition
 
 # ML imports
 from transformers import AutoTokenizer, AutoModel
@@ -30,8 +33,8 @@ class KafkaTextEmbeddings():
         self.model = AutoModel.from_pretrained(self.model_name)
         # self.previous_messages = self.get_previous_messages()
 
-    def set_topic(self, kafka_topic):
-        self.kafka_topic = kafka_topic
+    #     def set_topic(self, kafka_topic):
+    #         self.kafka_topic = kafka_topic
 
     # def get_previous_messages(self):
     #     previous_messages = []
@@ -79,25 +82,21 @@ class KafkaTextEmbeddings():
 
         embeddings = outputs.last_hidden_state.mean(dim=1).numpy()
         kafka_logger.info(f"Generated embeddings for message: {message}, {embeddings}")
-
+    
     def run(self):
-        kafka_logger.info("Started KafkaTextEmbeddings for topic: " + self.kafka_topic)
-        flow = Dataflow()
-
-        flow.map(self.vectorize)
-        flow.capture()
-
-        input_config = KafkaInputConfig(
-            self.kafka_bootstrap_server,
-            self.kafka_group_id,
-            self.kafka_topic,
-            messages_per_epoch=1
+        input_config = KafkaInput(
+            brokers=[self.kafka_bootstrap_server],
+            topics=[self.kafka_topic],
+            add_config={
+                'group.id': self.kafka_group_id,
+                'auto.offset.reset': 'earliest',
+                'enable.auto.commit': True
+            }
         )
 
-        def print_output(worker_index, worker_count):
-            def destination_helper(feed):
-                offset = feed[0]
-                data = feed[1]
-                # . . .
-            return destination_helper
-        spawn_cluster(flow, input_config, print_output)
+        kafka_logger.info("Started KafkaTextEmbeddings for topic: " + self.kafka_topic)
+        flow = Dataflow()
+        flow.input(self.kafka_topic, input_config)
+        flow.map(self.vectorize)
+        flow.output("stdout", StdOutput())
+        run_main(flow)
