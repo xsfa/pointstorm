@@ -13,8 +13,8 @@ setup(
     url="https://github.com/xsfa/pointstorm",
     packages=find_packages(),
     install_requires=[
-        'bytewax==0.10.1',
-        'requests>=2.28.0',
+        'bytewax==0.16.0',
+        'requests>=2.31.0',
         'kafka-python==2.0.2',
         'confluent-kafka',
         'faker',
