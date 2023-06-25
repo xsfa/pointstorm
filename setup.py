@@ -19,7 +19,9 @@ setup(
         'confluent-kafka',
         'faker',
         'transformers',
-        'torch'
+        'torch',
+        'pydantic',
+        'unstructured'
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",

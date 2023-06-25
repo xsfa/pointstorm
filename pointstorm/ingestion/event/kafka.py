@@ -18,16 +18,16 @@ import torch
 
 # Local imports
 from pointstorm.config import abstract_logger as kafka_logger
+from pointstorm.embedding.text import Document, embedding
 
 class KafkaIngestionException(Exception):
     pass
 
 class KafkaTextEmbeddings():
-    def __init__(self, kafka_topic, kafka_bootstrap_server, kafka_group_id, text_field, huggingface_model_name):
+    def __init__(self, kafka_topic, kafka_bootstrap_server, kafka_config, huggingface_model_name):
         self.kafka_topic = kafka_topic
         self.kafka_bootstrap_server = kafka_bootstrap_server
-        self.kafka_group_id = kafka_group_id
-        self.text_field = text_field
+        self.kafka_config = kafka_config
         self.model_name = huggingface_model_name
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.model = AutoModel.from_pretrained(self.model_name)
@@ -66,15 +66,24 @@ class KafkaTextEmbeddings():
         
     #     return previous_messages
 
-    def vectorize(self, message):
+    def set_output(self, output):
+        # TODO: Add output
+        self.output = output
+
+    def embedding(self, message):
         """
-        Vectorize the message using the trained model
+        Generating embedding using text embedding class
         """
 
-        if self.text_field in json.loads(message[1]):
-            message = str(json.loads(message[1])[self.text_field])
+        if "raw_text" in json.loads(message[1]):
+            message = str(json.loads(message[1])["raw_text"])
         else:
             raise KafkaIngestionException("Message does not contain the specified text field: " + self.text_field)
+        
+        # doc = Document(
+        #     id=
+        #     text=message,
+        #     )
         inputs = self.tokenizer(message, return_tensors="pt", padding=True, truncation=True)
 
         with torch.no_grad():
@@ -87,16 +96,12 @@ class KafkaTextEmbeddings():
         input_config = KafkaInput(
             brokers=[self.kafka_bootstrap_server],
             topics=[self.kafka_topic],
-            add_config={
-                'group.id': self.kafka_group_id,
-                'auto.offset.reset': 'earliest',
-                'enable.auto.commit': True
-            }
+            add_config=self.kafka_config
         )
 
         kafka_logger.info("Started KafkaTextEmbeddings for topic: " + self.kafka_topic)
         flow = Dataflow()
         flow.input(self.kafka_topic, input_config)
-        flow.map(self.vectorize)
+        flow.map(self.embedding)
         flow.output("stdout", StdOutput())
         run_main(flow)

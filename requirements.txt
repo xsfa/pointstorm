@@ -5,3 +5,6 @@ confluent-kafka
 faker
 transformers
 torch
+pydantic
+qdrant-client
+unstructured
