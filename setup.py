@@ -22,6 +22,8 @@ setup(
         'torch',
         'pydantic',
         'unstructured'
+        'numpy',
+        'unittest'
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
