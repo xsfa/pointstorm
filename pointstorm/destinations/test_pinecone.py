@@ -3,79 +3,65 @@ import os
 import getpass
 from langchain.vectorstores import Pinecone
 import sys
-# from embedding.text import Document, embedding
+from embedding import text
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.vectorstores import Pinecone
+from langchain.document_loaders import TextLoader
+from tqdm.auto import tqdm
+from uuid import uuid4
 
-import hashlib
-from pydantic import BaseModel
-from typing import Any, Optional
-from transformers import AutoTokenizer, AutoModel
-
-import json
-
-from unstructured.partition.html import partition_html
-from unstructured.cleaners.core import clean, replace_unicode_quotes, clean_non_ascii_chars
-from unstructured.staging.huggingface import chunk_by_attention_window
-from unstructured.staging.huggingface import stage_for_transformers
-
-import hashlib
-from pydantic import BaseModel
-from typing import Any, Optional
-
-tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-
-class Document(BaseModel):
-    id: str
-    group_key: Optional[str] = None
-    metadata: Optional[dict] = {}
-    text: Optional[list]
-    embeddings: Optional[list] = []
-
-# create embedding and store in vector db
-def embedding(document):
-    inputs = tokenizer(document.text, padding=True, truncation=True, return_tensors="pt", max_length=384)
-    result = model(**inputs)
-    embeddings = result.last_hidden_state[:, 0, :].cpu().detach().numpy()
-    lst = embeddings.flatten().tolist()
-    document.embeddings.append(lst)
-    return document
-
-
-PINECONE_API_KEY = "insert here"
-PINECONE_ENV = "insert here"
+PINECONE_API_KEY = "9caaf550-9239-44e2-abdb-98a0f63a482f"
+PINECONE_ENV = "us-west4-gcp-free"
 
 pinecone.init(
     api_key=PINECONE_API_KEY,
     environment=PINECONE_ENV,
 )
 
-index = pinecone.Index("quickstart")
+if ("documents" not in pinecone.list_indexes()):
+    pinecone.create_index("documents", dimension=384, metric='cosine')
 
+index = pinecone.Index("documents")
 
-example_doc = Document(
-    id = "1",
-    group_key = None,
-    metadata = None,
-    text = ["The square root of 4 is 2. 2 times 2 is 4. 4 is the square of 2."],
+example_doc = text.Document(
+    id = str(uuid4()),
+    group_key = "test-doc",
+    # metadata = None,
+    text = ["An octopus' favorite color is always purple. Swag money swag money. Test Test. 12341223334234"],
     embeddings = []
 )
+embedded_doc = text.embedding(document=example_doc)
+contents = [example_doc]
+batch_size = 1
 
-embedded_doc = embedding(document=example_doc)
 
-index.upsert([
-    ("A", [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]),
-    ("B", [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]),
-    ("C", [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]),
-    ("D", [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]),
-    ("E", [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
-    ("F", [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]),
-    ("G", [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]),
-    ("H", [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]),
-    ("I", [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]),
-    ("J", [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-])
+for i in tqdm(range(0, len(contents), batch_size)):
+    ids = contents[i].id
+    embeddings = contents[i].embeddings
+    data = [{
+        'group_key': contents[i].group_key,
+        'file_content': contents[i].text
+    }]
+    to_upsert = list(zip(ids, embeddings, data))
+    index.upsert(vectors=to_upsert)
+
+    # index.upsert(embedded_doc.embeddings)
+
+
+# index.upsert([
+#     ("A", [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]),
+#     ("B", [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]),
+#     ("C", [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]),
+#     ("D", [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]),
+#     ("E", [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
+#     ("F", [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]),
+#     ("G", [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]),
+#     ("H", [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]),
+#     ("I", [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]),
+#     ("J", [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+# ])
     
-print(pinecone.list_indexes())
+# print(pinecone.list_indexes())
 
 
 
