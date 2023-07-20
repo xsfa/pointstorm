@@ -1,17 +1,35 @@
 import pinecone
-import os
-import getpass
 from langchain.vectorstores import Pinecone
-import sys
-from embedding import text
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import Pinecone
-from langchain.document_loaders import TextLoader
+from embedding.text import Document, embedding
 from tqdm.auto import tqdm
 from uuid import uuid4
+from typing import Union, List
 
 PINECONE_API_KEY = "9caaf550-9239-44e2-abdb-98a0f63a482f"
 PINECONE_ENV = "us-west4-gcp-free"
+
+class PineconePipeline:
+    api_key: str
+    environment: str
+    documents: Union[Document, List[Document], str]
+
+    def __init__(self, api_key: str, environment: str) -> None:
+        self.api_key = api_key
+        self.environment = environment
+        pinecone.init(
+            api_key=self.api_key,
+            environment=self.environment,
+        )
+
+    def set_data(self, input_data: Union[Document, List[Document], str]) -> None:
+        if isinstance(input_data, Document):
+            self.documents = [input_data]
+        elif isinstance(input_data, list) and all(isinstance(doc, Document) for doc in input_data):
+            self.documents = input_data
+        elif isinstance(input_data, str):
+            self.documents = [Document(id=str(uuid4()), text=[input_data])]
+        else:
+            raise ValueError("Input data should be a Document object, a list of Document objects, or a raw string.")
 
 pinecone.init(
     api_key=PINECONE_API_KEY,
@@ -23,17 +41,25 @@ if ("documents" not in pinecone.list_indexes()):
 
 index = pinecone.Index("documents")
 
-example_doc = text.Document(
-    id = str(uuid4()),
-    group_key = "test-doc",
-    # metadata = None,
-    text = ["An octopus' favorite color is always purple. Swag money swag money. Test Test. 12341223334234"],
-    embeddings = []
-)
-embedded_doc = text.embedding(document=example_doc)
-contents = [example_doc]
-batch_size = 1
+contents = []
+i = 0
+with open('/Users/andrewjumanca/GitHub/pointstorm-docs/pointstorm/destinations/octopi.txt', 'r') as file:
+    for line in file:
+        contents.append(
+            Document(
+                id = str(uuid4()),
+                group_key = "test-doc",
+                text = [line],
+                embeddings = []
+            )
+        )
+        contents[i] = embedding(document=contents[i])
+        i += 1
 
+# print([len(x.embeddings[0]) for x in contents])
+# print(contents[0].embeddings[0])
+
+batch_size = 1
 
 for i in tqdm(range(0, len(contents), batch_size)):
     ids = contents[i].id
@@ -44,24 +70,6 @@ for i in tqdm(range(0, len(contents), batch_size)):
     }]
     to_upsert = list(zip(ids, embeddings, data))
     index.upsert(vectors=to_upsert)
-
-    # index.upsert(embedded_doc.embeddings)
-
-
-# index.upsert([
-#     ("A", [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]),
-#     ("B", [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]),
-#     ("C", [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]),
-#     ("D", [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]),
-#     ("E", [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
-#     ("F", [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]),
-#     ("G", [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]),
-#     ("H", [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]),
-#     ("I", [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]),
-#     ("J", [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-# ])
-    
-# print(pinecone.list_indexes())
 
 
 
