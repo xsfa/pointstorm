@@ -31,45 +31,45 @@ class PineconePipeline:
         else:
             raise ValueError("Input data should be a Document object, a list of Document objects, or a raw string.")
 
-pinecone.init(
-    api_key=PINECONE_API_KEY,
-    environment=PINECONE_ENV,
-)
+    pinecone.init(
+        api_key=PINECONE_API_KEY,
+        environment=PINECONE_ENV,
+    )
 
-if ("documents" not in pinecone.list_indexes()):
-    pinecone.create_index("documents", dimension=384, metric='cosine')
+    def initialize_contents(self, txt_path):
+        contents = []
+        with open(txt_path, 'r') as file:
+            for line in file:
+                doc = Document(
+                    id=str(uuid4()),
+                    group_key="test-doc",
+                    text=[line],
+                    embeddings=[]
+                )
+                doc = self.embedding(document=doc)
+                contents.append(doc)
+        return content
 
-index = pinecone.Index("documents")
 
-contents = []
-i = 0
-with open('/Users/andrewjumanca/GitHub/pointstorm-docs/pointstorm/destinations/octopi.txt', 'r') as file:
-    for line in file:
-        contents.append(
-            Document(
-                id = str(uuid4()),
-                group_key = "test-doc",
-                text = [line],
-                embeddings = []
-            )
-        )
-        contents[i] = embedding(document=contents[i])
-        i += 1
+    def upsert(self, index_name, txt_path):
+        if index_name not in pinecone.list_indexes():
+            pinecone.create_index(index_name, dimension=384, metric='cosine')
 
-# print([len(x.embeddings[0]) for x in contents])
-# print(contents[0].embeddings[0])
+        index = pinecone.Index(index_name)
+        contents = self.initialize_contents(txt_path)
 
-batch_size = 1
+        batch_size = 1
+        for i in tqdm(range(0, len(contents), batch_size)):
+            ids = contents[i].id
+            embeddings = contents[i].embeddings
+            data = [{
+                'group_key': contents[i].group_key,
+                'file_content': contents[i].text
+            }]
+            to_upsert = list(zip(ids, embeddings, data))
+            index.upsert(vectors=to_upsert)
 
-for i in tqdm(range(0, len(contents), batch_size)):
-    ids = contents[i].id
-    embeddings = contents[i].embeddings
-    data = [{
-        'group_key': contents[i].group_key,
-        'file_content': contents[i].text
-    }]
-    to_upsert = list(zip(ids, embeddings, data))
-    index.upsert(vectors=to_upsert)
+
 
 
 
