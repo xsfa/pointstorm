@@ -48,7 +48,7 @@ class PineconePipeline:
                 )
                 doc = self.embedding(document=doc)
                 contents.append(doc)
-        return content
+        return contents
 
 
     def upsert(self, index_name, txt_path):
