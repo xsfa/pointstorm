@@ -31,10 +31,10 @@ class PineconePipeline:
         else:
             raise ValueError("Input data should be a Document object, a list of Document objects, or a raw string.")
 
-    pinecone.init(
-        api_key=PINECONE_API_KEY,
-        environment=PINECONE_ENV,
-    )
+    # pinecone.init(
+    #     api_key=PINECONE_API_KEY,
+    #     environment=PINECONE_ENV,
+    # )
 
     def initialize_contents(self, txt_path):
         contents = []

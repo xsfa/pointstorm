@@ -19,7 +19,20 @@ class TestCreatePineconeModule(unittest.TestCase):
         self.assertEqual(connection.environment, PINECONE_ENV)
         
     def test_pinecone_import_data(self):
-        
+        # Test that the document model we want to import as our
+        # data input is in the correct format and has all 
+        # necessary attributes
+        pass
+
+    def test_pinecone_data_upsert(self):
+        # Test whether we can correctly upsert the data we want
+        pass
+
+    def test_pinecone_index(self):
+        # Verify if pinecone index is what we want it to be
+        # and whether we can get the name of it
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()
