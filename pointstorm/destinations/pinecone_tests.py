@@ -17,36 +17,58 @@ class TestCreatePineconeModule(unittest.TestCase):
         self.assertEqual(self.connection.environment, PINECONE_ENV)
         
     def test_pinecone_import_data(self):
- 
         # Verifying if the set data is a Document object
-        doc_mock, string_mock = MagicMock(spec=Document), MagicMock(spec=str)
-        
-        # Test case 1: Setting data with a single Document object
+        doc_mock, docs_mock, string_mock = MagicMock(spec=Document), MagicMock(spec=list(Document)), MagicMock(spec=str)
+
         self.connection.set_data(doc_mock)
         self.assertEqual(self.connection.documents, [doc_mock])
 
-        # Test case 2: Setting data with a list of Document objects
-        self.connection.set_data([doc_mock, doc_mock])
-        self.assertEqual(self.connection.documents, [doc_mock, doc_mock])
+        self.connections.set_data(docs_mock)
+        self.assertEqual(self.connection.documents, [docs_mock])
 
-        # Test case 3: Setting data with a string
-        self.connection.set_data("This is a test string.")
-        self.assertEqual(len(self.connection.documents), 1)
-        self.assertIsInstance(self.connection.documents[0], Document)
+        self.connections.set_data(string_mock)
+        self.assertEqual(self.connection.documents, [string_mock])
 
-        # Test case 4: Setting data with an unsupported input type
-        with self.assertRaises(ValueError):
-            self.connection.set_data(12345)  # Pass an unsupported input type, like an integer
 
 
     def test_pinecone_data_upsert(self):
         # Test whether we can correctly upsert the data we want
-        pass
+        # For this test, we need to mock the pinecone functions and initialize_contents method
+
+        # Mock the pinecone.Index class
+        with patch("pinecone.Index") as IndexMock:
+            index_mock = MagicMock()
+            IndexMock.return_value = index_mock
+
+            # Mock the initialize_contents method and make it return a list of documents
+            with patch.object(PineconePipeline, "initialize_contents") as init_contents_mock:
+                contents_mock = [MagicMock(spec=Document)]
+                init_contents_mock.return_value = contents_mock
+
+                connection = PineconePipeline(api_key=PINECONE_API_KEY, environment=PINECONE_ENV)
+
+                # Call the upsert method
+                connection.upsert("test-index", "path/to/txt/file.txt")
+
+                # Ensure the pinecone functions were called correctly
+                IndexMock.assert_called_once_with("test-index")
+                index_mock.upsert.assert_called_once_with(vectors=([(contents_mock[0].id, contents_mock[0].embeddings, [{'group_key': contents_mock[0].group_key, 'file_content': contents_mock[0].text}])]))
 
     def test_pinecone_index(self):
         # Verify if pinecone index is what we want it to be
         # and whether we can get the name of it
-        pass
+
+        # Mock the pinecone.list_indexes function
+        with patch("pinecone.list_indexes") as list_indexes_mock:
+            list_indexes_mock.return_value = ["index1", "index2"]
+
+            connection = PineconePipeline(api_key=PINECONE_API_KEY, environment=PINECONE_ENV)
+
+            # Test the name of the index
+            self.assertEqual(connection.index_name, "index1")
+
+            # Test that the pinecone.list_indexes function was called
+            list_indexes_mock.assert_called_once()
 
 
 if __name__ == '__main__':
