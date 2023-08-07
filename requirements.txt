@@ -8,3 +8,5 @@ torch
 pydantic
 qdrant-client
 unstructured
+numpy
+unittest
