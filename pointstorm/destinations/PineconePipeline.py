@@ -5,15 +5,30 @@ from tqdm.auto import tqdm
 from uuid import uuid4
 from typing import Union, List
 
-PINECONE_API_KEY = "9caaf550-9239-44e2-abdb-98a0f63a482f"
-PINECONE_ENV = "us-west4-gcp-free"
-
 class PineconePipeline:
+    """
+    Pipeline for interacting with the Pinecone database.
+    
+    Provides utilities for setting data, initializing content, and upserting data to the Pinecone database.
+    
+    Attributes:
+    api_key (str): Pinecone API key.
+    environment (str): Environment for Pinecone (e.g., production, staging).
+    documents (Union[Document, List[Document], str]): Documents to be processed or stored.
+    """
+
     api_key: str
     environment: str
     documents: Union[Document, List[Document], str]
 
     def __init__(self, api_key: str, environment: str) -> None:
+        """
+        Initialize the PineconePipeline with API key and environment.
+        
+        Parameters:
+        api_key (str): Pinecone API key.
+        environment (str): Environment for Pinecone (e.g., production, staging).
+        """
         self.api_key = api_key
         self.environment = environment
         pinecone.init(
@@ -22,6 +37,17 @@ class PineconePipeline:
         )
 
     def set_data(self, input_data: Union[Document, List[Document], str]) -> None:
+        """
+        Set the data for the pipeline.
+        
+        The input data can be a single Document, a list of Document objects, or a raw string.
+        
+        Parameters:
+        input_data (Union[Document, List[Document], str]): Data to be set.
+        
+        Raises:
+        ValueError: If input data is not of the correct type.
+        """
         if isinstance(input_data, Document):
             self.documents = [input_data]
         elif isinstance(input_data, list) and all(isinstance(doc, Document) for doc in input_data):
@@ -32,6 +58,17 @@ class PineconePipeline:
             raise ValueError("Input data should be a Document object, a list of Document objects, or a raw string.")
 
     def initialize_contents(self, txt_path):
+        """
+        Initializes contents from a given text file.
+        
+        Reads a text file line by line, converting each line into a Document object with a unique ID and group key.
+        
+        Parameters:
+        txt_path (str): Path to the text file to read.
+        
+        Returns:
+        List[Document]: List of initialized Document objects.
+        """
         contents = []
         with open(txt_path, 'r') as file:
             for line in file:
@@ -47,6 +84,16 @@ class PineconePipeline:
 
 
     def upsert(self, index_name, txt_path):
+        """
+        Upsert content to the specified Pinecone index.
+        
+        If the index does not exist, it will create a new one with specified dimensions and metric.
+        Then, it adds the content to the index in batches.
+        
+        Parameters:
+        index_name (str): Name of the Pinecone index to upsert to.
+        txt_path (str): Path to the text file containing content to upsert.
+        """
         if index_name not in pinecone.list_indexes():
             pinecone.create_index(index_name, dimension=384, metric='cosine')
 
@@ -63,8 +110,3 @@ class PineconePipeline:
             }]
             to_upsert = list(zip(ids, embeddings, data))
             index.upsert(vectors=to_upsert)
-
-
-
-
-
