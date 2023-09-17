@@ -1,4 +1,5 @@
-import hashlib
+import hashlib, openai, dotenv, os
+import requests
 from typing import List, Optional
 from pydantic import BaseModel
 from typing import Any, Optional
@@ -32,7 +33,7 @@ class Document(BaseModel):
     text: Optional[list]
     embeddings: Optional[list] = []
 
-def generate_embedding(document: Document, tokenizer: AutoTokenizer, model: AutoModel) -> Document:
+def generate_embedding(document: Document, tokenizer: AutoTokenizer, model: AutoModel, model_id: str = None) -> Document:
     """
     Generate embedding for a given document using a pretrained model.
     @params: 
@@ -40,20 +41,33 @@ def generate_embedding(document: Document, tokenizer: AutoTokenizer, model: Auto
     returns: 
         Document: Document object with updated embeddings.
     """
-    try:
-        inputs = tokenizer(
-            document.text,
-            padding=True,
-            truncation=True,
-            return_tensors="pt",
-            max_length=384
+    if model_id:
+        response = requests.get(
+            url="https://api.openai.com/v1/models",
+            params={'token': os.getenv('OPENAI_API_TOKEN')}
         )
-        result = model(**inputs)
-        embeddings = result.last_hidden_state[:, 0, :].cpu().detach().numpy()
-        flattened_embeddings = embeddings.flatten().tolist()
-        document.embeddings.append(flattened_embeddings)
 
-        return document
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
-        return None
+        if response.status_code == 200:
+            print(response.json())
+        elif response.status_code == 401:
+            print(f"You didn't provide your API key. You need to provide your API key in an Authorization header using Bearer auth (i.e. Authorization: Bearer YOUR_KEY)")
+        else:
+            print(f"Failed to get data: {response.content}")
+    else:
+        try:
+            inputs = tokenizer(
+                document.text,
+                padding=True,
+                truncation=True,
+                return_tensors="pt",
+                max_length=384
+            )
+            result = model(**inputs)
+            embeddings = result.last_hidden_state[:, 0, :].cpu().detach().numpy()
+            flattened_embeddings = embeddings.flatten().tolist()
+            document.embeddings.append(flattened_embeddings)
+
+            return document
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+            return None

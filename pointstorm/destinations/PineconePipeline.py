@@ -1,4 +1,4 @@
-import pinecone, openai
+import pinecone
 import os
 from dotenv import load_dotenv
 from langchain.vectorstores import Pinecone
@@ -60,9 +60,6 @@ class PineconePipeline:
             self.documents = [Document(id=str(uuid4()), text=[input_data])]
         else:
             raise ValueError("Input data should be a Document object, a list of Document objects, or a raw string.")
-        
-    def embed(self, openai: bool = True):
-        pass
 
     def initialize_contents(self, txt_path):
         """
@@ -81,7 +78,7 @@ class PineconePipeline:
             for line in file:
                 doc = Document(
                     id=str(uuid4()),
-                    group_key="test-doc",
+                    group_key="test-doc", # verify requirements in 
                     text=[line],
                     embeddings=[]
                 )
