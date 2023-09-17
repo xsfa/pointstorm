@@ -1,9 +1,13 @@
-import pinecone
+import pinecone, openai
+import os
+from dotenv import load_dotenv
 from langchain.vectorstores import Pinecone
 from embedding.text import Document, embedding
 from tqdm.auto import tqdm
 from uuid import uuid4
 from typing import Union, List
+
+load_dotenv()
 
 class PineconePipeline:
     """
@@ -12,16 +16,16 @@ class PineconePipeline:
     Provides utilities for setting data, initializing content, and upserting data to the Pinecone database.
     
     Attributes:
-    api_key (str): Pinecone API key.
-    environment (str): Environment for Pinecone (e.g., production, staging).
+    pinecone_api_key (str): Pinecone API key.
+    pinecone_environment (str): Environment for Pinecone (e.g., production, staging).
     documents (Union[Document, List[Document], str]): Documents to be processed or stored.
     """
 
-    api_key: str
-    environment: str
+    pinecone_api_key: str
+    pinecone_environment: str
     documents: Union[Document, List[Document], str]
 
-    def __init__(self, api_key: str, environment: str) -> None:
+    def __init__(self, openai_api_key:str = os.getenv('OPENAI_API_KEY')) -> None:
         """
         Initialize the PineconePipeline with API key and environment.
         
@@ -29,11 +33,11 @@ class PineconePipeline:
         api_key (str): Pinecone API key.
         environment (str): Environment for Pinecone (e.g., production, staging).
         """
-        self.api_key = api_key
-        self.environment = environment
+        self.pinecone_api_key = os.getenv('PINECONE_API_KEY')
+        self.pincone_environment = os.getenv('PINECONE_ENVIRONMENT')
         pinecone.init(
-            api_key=self.api_key,
-            environment=self.environment,
+            api_key=self.pinecone_api_key,
+            penvironment=self.pinecone_environment,
         )
 
     def set_data(self, input_data: Union[Document, List[Document], str]) -> None:
@@ -56,6 +60,9 @@ class PineconePipeline:
             self.documents = [Document(id=str(uuid4()), text=[input_data])]
         else:
             raise ValueError("Input data should be a Document object, a list of Document objects, or a raw string.")
+        
+    def embed(self, openai: bool = True):
+        pass
 
     def initialize_contents(self, txt_path):
         """
