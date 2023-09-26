@@ -130,3 +130,6 @@ dmypy.json
 
 # Scripts used for testing purposes
 test-script.py
+
+# IDE Settings - Visual Studio Code
+.vscode/
