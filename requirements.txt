@@ -10,4 +10,3 @@ qdrant-client
 unstructured
 numpy
 unittest
-python-dotenv

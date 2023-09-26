@@ -46,7 +46,7 @@ def get_openai_models():
         response = requests.get(
                 url = "https://api.openai.com/v1/models",
                 headers = {
-                        'Authorization': f'Bearer {os.getenv("OPENAI_API_TOKEN")}',
+                        'Authorization': f'Bearer {os.getenv("OPENAI_API_KEY")}',
                         'Content-Type': 'application/json'
                     }
             )
@@ -76,7 +76,7 @@ def generate_embedding(document: Document, tokenizer: AutoTokenizer = None, mode
             url='https://api.openai.com/v1/embeddings',
             headers = {
                         'Content-Type': 'application/json',
-                        'Authorization': f'Bearer {os.getenv("OPENAI_API_TOKEN")}'
+                        'Authorization': f'Bearer {os.getenv("OPENAI_API_KEY")}'
                     },
             json = {
                 'input': document.text,

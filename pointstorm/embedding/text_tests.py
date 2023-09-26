@@ -90,4 +90,17 @@ class TestOpenAIEmbedding(unittest.TestCase):
 
 # Run the tests
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(exit=False)
+
+    # Example usage
+    # example_doc = Document(
+    #                         id="123",
+    #                         group_key="group1",
+    #                         metadata={"author": "John Doe"},
+    #                         text=["Hello, world!"],
+    #                         embeddings=[]
+    #                         )
+    # embedded_doc = generate_embedding(document=example_doc, embedding_type="openai") # default model_id
+    # 
+    # Returned document object with updated embeddings for text.
+    # print(embedded_doc.embeddings)
