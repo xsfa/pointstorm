@@ -1,4 +1,5 @@
-import hashlib, openai, dotenv, os
+import os
+from dotenv import load_dotenv, dotenv_values
 import requests
 from typing import List, Optional
 from pydantic import BaseModel
@@ -6,14 +7,11 @@ from typing import Any, Optional
 from numpy import ndarray
 from transformers import AutoTokenizer, AutoModel
 
-import json
-
 from unstructured.partition.html import partition_html
 from unstructured.cleaners.core import clean, replace_unicode_quotes, clean_non_ascii_chars
 from unstructured.staging.huggingface import chunk_by_attention_window
 from unstructured.staging.huggingface import stage_for_transformers
 
-import hashlib
 from pydantic import BaseModel
 from typing import Any, Optional
 
@@ -42,11 +40,10 @@ def get_openai_models():
         An array containing strings of the embedding model names.
     """
     try:
-        dotenv.load_dotenv()
         response = requests.get(
                 url = "https://api.openai.com/v1/models",
                 headers = {
-                        'Authorization': f'Bearer {os.getenv("OPENAI_API_KEY")}',
+                        'Authorization': f'Bearer {os.getenv("OPENAI_API_TOKEN")}',
                         'Content-Type': 'application/json'
                     }
             )
@@ -67,7 +64,7 @@ def generate_embedding(document: Document, tokenizer: AutoTokenizer = None, mode
         Document: Document object with updated embeddings.
     """
     if embedding_type == "openai":
-        dotenv.load_dotenv()
+        load_dotenv()
         if model_id == "text-embedding-ada-002" or model_id in get_openai_models():
             pass
         else:
@@ -76,7 +73,7 @@ def generate_embedding(document: Document, tokenizer: AutoTokenizer = None, mode
             url='https://api.openai.com/v1/embeddings',
             headers = {
                         'Content-Type': 'application/json',
-                        'Authorization': f'Bearer {os.getenv("OPENAI_API_KEY")}'
+                        'Authorization': f'Bearer {os.getenv("OPENAI_API_TOKEN")}'
                     },
             json = {
                 'input': document.text,

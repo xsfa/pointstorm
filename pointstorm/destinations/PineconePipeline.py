@@ -2,7 +2,7 @@ import pinecone
 import os
 from dotenv import load_dotenv
 from langchain.vectorstores import Pinecone
-from embedding.text import Document, embedding
+from pointstorm.embedding.text import Document
 from tqdm.auto import tqdm
 from uuid import uuid4
 from typing import Union, List
@@ -21,6 +21,7 @@ class PineconePipeline:
     documents (Union[Document, List[Document], str]): Documents to be processed or stored.
     """
 
+    openai_api_key: str
     pinecone_api_key: str
     pinecone_environment: str
     documents: Union[Document, List[Document], str]
@@ -34,10 +35,10 @@ class PineconePipeline:
         environment (str): Environment for Pinecone (e.g., production, staging).
         """
         self.pinecone_api_key = os.getenv('PINECONE_API_KEY')
-        self.pincone_environment = os.getenv('PINECONE_ENVIRONMENT')
+        self.pinecone_environment = os.getenv('PINECONE_ENV')
         pinecone.init(
             api_key=self.pinecone_api_key,
-            penvironment=self.pinecone_environment,
+            environment=self.pinecone_environment,
         )
 
     def set_data(self, input_data: Union[Document, List[Document], str]) -> None:
@@ -90,10 +91,10 @@ class PineconePipeline:
     def upsert(self, index_name, txt_path):
         """
         Upsert content to the specified Pinecone index.
-        
+
         If the index does not exist, it will create a new one with specified dimensions and metric.
         Then, it adds the content to the index in batches.
-        
+
         Parameters:
         index_name (str): Name of the Pinecone index to upsert to.
         txt_path (str): Path to the text file containing content to upsert.
