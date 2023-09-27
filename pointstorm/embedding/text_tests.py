@@ -1,5 +1,5 @@
 import unittest
-from pointstorm.embedding.text import Document, generate_embedding
+from pointstorm.embedding.text import Document, generate_embedding, get_openai_models
 from unittest.mock import patch, MagicMock
 from transformers import AutoTokenizer, AutoModel
 import torch
@@ -52,6 +52,55 @@ class TestGenerateEmbedding(unittest.TestCase):
         # Check that embeddings are there
         self.assertGreaterEqual(len(result.embeddings), 1)
 
+class TestOpenAIEmbedding(unittest.TestCase):
+    def test_get_openai_models(self):
+        result = get_openai_models()
+
+        self.assertIsInstance(result, list)
+
+        self.assertGreaterEqual(len(result), 1)
+
+    def test_generate_openai_embeddings(self):
+        result = generate_embedding(
+            document = Document(
+                        id="123",
+                        group_key="group1",
+                        metadata={"author": "John Doe"},
+                        text=["Hello, world!"],
+                        embeddings=[]
+                        ),
+            embedding_type="openai")
+        
+        self.assertIsInstance(result, Document)
+
+        self.assertGreaterEqual(len(result.embeddings), 1)
+    
+    def test_invalid_model_id_openai_embeddings(self):
+        # Checks that using a bad model id correctly return an exception.
+        self.assertRaises(Exception, generate_embedding,
+            document = Document(
+                        id="123",
+                        group_key="group1",
+                        metadata={"author": "John Doe"},
+                        text=["Hello, world!"],
+                        embeddings=[]
+                        ),
+            embedding_type="openai",
+            model_id="best_gpt_model_everrrrr")
+
 # Run the tests
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(exit=False)
+
+    # Example usage
+    # example_doc = Document(
+    #                         id="123",
+    #                         group_key="group1",
+    #                         metadata={"author": "John Doe"},
+    #                         text=["Hello, world!"],
+    #                         embeddings=[]
+    #                         )
+    # embedded_doc = generate_embedding(document=example_doc, embedding_type="openai") # default model_id
+    # 
+    # Returned document object with updated embeddings for text.
+    # print(embedded_doc.embeddings)
